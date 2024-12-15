@@ -1,0 +1,159 @@
+<div>
+  <form (ngSubmit)="searchFlights()">
+    <div class="form-row">
+      <label
+        >Origin:
+        <select [(ngModel)]="origin" name="origin" required>
+          <option *ngFor="let airport of airports" [value]="airport.code">
+            {{ airport.name }}
+          </option>
+        </select>
+      </label>
+
+      <label
+        >Destination:
+        <select [(ngModel)]="destination" name="destination" required>
+          <option *ngFor="let airport of airports" [value]="airport.code">
+            {{ airport.name }}
+          </option>
+        </select>
+      </label>
+
+      <label
+        >Departure Date:
+        <input
+          type="date"
+          [(ngModel)]="departureDate"
+          name="departureDate"
+          required
+          [min]="today"
+        />
+      </label>
+
+      <label
+        >Return Date:
+        <input
+          type="date"
+          [(ngModel)]="returnDate"
+          name="returnDate"
+          [min]="departureDate || today"
+        />
+      </label>
+    </div>
+
+    <div class="form-row">
+      <label
+        >Adults:
+        <input
+          type="number"
+          [(ngModel)]="adults"
+          name="adults"
+          min="1"
+          required
+        />
+      </label>
+
+      <label
+        >Children:
+        <input type="number" [(ngModel)]="children" name="children" min="0" />
+      </label>
+
+      <label
+        >Infants:
+        <input type="number" [(ngModel)]="infants" name="infants" min="0" />
+      </label>
+
+      <label
+        >Currency:
+        <select [(ngModel)]="currency" name="currency">
+          <option value="USD">Dollars</option>
+          <option value="EUR">Euros</option>
+          <option value="HRK">Kunas</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="button-row">
+      <button type="submit" [disabled]="!isFormValid()">Search Flights</button>
+    </div>
+  </form>
+</div>
+
+<div *ngIf="loading" class="loading">
+  <div class="spinner"></div>
+</div>
+
+<div *ngIf="!loading" class="table-container">
+  <table>
+    <thead>
+      <tr>
+        <th class="non-sortable origin">Origin</th>
+        <th class="non-sortable">Destination</th>
+        <th class="non-sortable">Departure Date</th>
+        <th class="non-sortable">Return Date</th>
+        <th class="sortable" (click)="toggleSort('DepartedLayovers')">
+          Layovers (Departed)
+          <span *ngIf="sort === 'DepartedLayovers'" class="sort-icon">
+            {{ sortDirection === "asc" ? "▲" : "▼" }}
+          </span>
+        </th>
+        <th class="sortable" (click)="toggleSort('ReturnLayovers')">
+          Layovers (Return)
+          <span *ngIf="sort === 'ReturnLayovers'" class="sort-icon">
+            {{ sortDirection === "asc" ? "▲" : "▼" }}
+          </span>
+        </th>
+        <th class="non-sortable">Adults</th>
+        <th class="non-sortable">Children</th>
+        <th class="non-sortable">Infants</th>
+        <th class="sortable" (click)="toggleSort('Price')">
+          Price
+          <span *ngIf="sort === 'Price'" class="sort-icon">
+            {{ sortDirection === "asc" ? "▲" : "▼" }}
+          </span>
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngIf="!flights || !flights.results || flights.results.length === 0">
+        <td colspan="10">No flights available.</td>
+      </tr>
+      <tr *ngFor="let flight of flights?.results">
+        <td>{{ getAirportName(flight.departedAirport) }}</td>
+        <td>{{ getAirportName(flight.arrivedAirport) }}</td>
+        <td>{{ flight.departureDate | date }}</td>
+        <td>{{ flight.returnDate | date }}</td>
+        <td>{{ flight.departedLayovers }}</td>
+        <td>{{ flight.returnLayovers }}</td>
+        <td>{{ flight.adults }}</td>
+        <td>{{ flight.children }}</td>
+        <td>{{ flight.infants }}</td>
+        <td>{{ flight.currency }} {{ flight.price }}</td>
+      </tr>
+    </tbody>
+  </table>
+  <div class="table-footer">
+    <div class="paging">
+      <span
+        >Page {{ flights?.count ? page : 0 }} of {{ getTotalPages() }}
+      </span>
+      <div class="pagination-buttons">
+        <button (click)="changePage(-1)" [disabled]="page <= 1">
+          Previous
+        </button>
+        <button (click)="changePage(1)" [disabled]="page >= getTotalPages()">
+          Next
+        </button>
+      </div>
+    </div>
+
+    <div>
+      <label for="perPage" class="label-for-per-page">Results per page:</label>
+      <select id="perPage" [(ngModel)]="perPage" (change)="searchFlights()">
+        <option *ngFor="let size of [10, 20, 30]" [value]="size">
+          {{ size }}
+        </option>
+      </select>
+    </div>
+  </div>
+</div>
