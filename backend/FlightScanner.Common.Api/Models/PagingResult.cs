@@ -1,6 +1,4 @@
-﻿using System.Reflection;
-
-namespace FlightScanner.Common.Api.Models
+﻿namespace FlightScanner.Common.Api.Models
 {
 	public class PagingResult<T> where T : class
 	{

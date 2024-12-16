@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace FlightScanner.Api.Controllers
 {
 	[ApiController]
-	[Route("[controller]")]
+	[Route("api/[controller]")]
 	public class FlightController : ControllerBase
 	{
 		private readonly IFlightService _flightService;

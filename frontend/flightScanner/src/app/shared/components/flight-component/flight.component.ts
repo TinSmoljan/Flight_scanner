@@ -5,6 +5,13 @@ import { Airport } from '../../../models/airport';
 import { TravelApiDto } from '../../../models/api/travel-api-dto';
 import { PagingResult } from '../../../models/paging-result';
 import { AirportService } from '../../../services/api/airport-service.api';
+import { FormControl } from '@angular/forms';
+import { Observable, of } from 'rxjs';
+import {
+  debounceTime,
+  switchMap,
+  tap,
+} from 'rxjs/operators';
 
 @Component({
   selector: 'app-flight',
@@ -12,13 +19,10 @@ import { AirportService } from '../../../services/api/airport-service.api';
   styleUrls: ['./flight.component.scss'],
 })
 export class FlightComponent implements OnInit {
-  airports: Airport[] = [];
   flights?: PagingResult<TravelApiDto> = undefined;
   loading = false;
   initialLoad = true;
 
-  origin = '';
-  destination = '';
   departureDate: string = '';
   returnDate: string = '';
   adults = 1;
@@ -32,6 +36,14 @@ export class FlightComponent implements OnInit {
 
   today: string = new Date().toISOString().split('T')[0];
 
+  originAirports: Airport[] = [];
+  destinationAirports: Airport[] = [];
+
+  originControl = new FormControl();
+  destinationControl = new FormControl();
+  filteredOrigins!: Observable<Airport[]>;
+  filteredDestinations!: Observable<Airport[]>;
+
   constructor(
     private flightService: FlightService,
     private airportService: AirportService,
@@ -40,10 +52,9 @@ export class FlightComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.loadAirports();
     this.route.queryParams.subscribe((params) => {
-      this.origin = params['originLocationCode'] || this.origin;
-      this.destination = params['destinationLocationCode'] || this.destination;
+      this.originControl.setValue(params['originLocationCode'] || '');
+      this.destinationControl.setValue(params['destinationLocationCode'] || '');
       this.departureDate = params['departureDate'] || this.departureDate;
       this.returnDate = params['returnDate'] || this.returnDate;
       this.adults = params['adults'] || this.adults;
@@ -60,12 +71,32 @@ export class FlightComponent implements OnInit {
         this.initialLoad = false;
       }
     });
+
+    this.filteredOrigins = this.originControl.valueChanges.pipe(
+      debounceTime(300),
+      switchMap((value) =>
+        this._filterAirports(value).pipe(
+          tap((fetchedAirports) => (this.originAirports = fetchedAirports))
+        )
+      )
+    );
+
+    this.filteredDestinations = this.destinationControl.valueChanges.pipe(
+      debounceTime(300),
+      switchMap((value) =>
+        this._filterAirports(value).pipe(
+          tap((fetchedAirports) => (this.destinationAirports = fetchedAirports))
+        )
+      )
+    );
   }
 
-  loadAirports(): void {
-    this.airportService.getAirports().subscribe((data: Airport[]) => {
-      this.airports = data;
-    });
+  private _filterAirports(value: string): Observable<Airport[]> {
+    if (!value) {
+      return of([]);
+    }
+
+    return this.airportService.getAirports(value);
   }
 
   toggleSort(column: string): void {
@@ -75,6 +106,12 @@ export class FlightComponent implements OnInit {
       this.sort = column;
       this.sortDirection = 'asc';
     }
+    this.page = 1;
+    this.searchFlights();
+  }
+
+  togglePerpage(): void {
+    this.page = 1;
     this.searchFlights();
   }
 
@@ -83,11 +120,12 @@ export class FlightComponent implements OnInit {
       return;
     }
 
+    console.log(this.originAirports);
     this.loading = true;
 
     const params = {
-      originLocationCode: this.origin,
-      destinationLocationCode: this.destination,
+      originLocationCode: this.originControl.value,
+      destinationLocationCode: this.destinationControl.value,
       departureDate: this.departureDate,
       returnDate: this.returnDate,
       adults: this.adults,
@@ -110,8 +148,8 @@ export class FlightComponent implements OnInit {
 
     this.flightService
       .getFlights(
-        this.origin,
-        this.destination,
+        this.originControl.value,
+        this.destinationControl.value,
         this.departureDate,
         this.returnDate,
         this.adults,
@@ -134,10 +172,11 @@ export class FlightComponent implements OnInit {
       );
   }
 
+
   isFormValid(): boolean {
     return (
-      !!this.origin &&
-      !!this.destination &&
+      !!this.originControl.value &&
+      !!this.destinationControl.value &&
       !!this.departureDate &&
       this.departureDate >= this.today &&
       (!this.returnDate || this.returnDate >= this.departureDate)
@@ -153,8 +192,8 @@ export class FlightComponent implements OnInit {
     this.searchFlights();
   }
 
-  getAirportName(code: string): string {
-    const airport = this.airports.find(a => a.code === code);
+  getAirportName(code: string, airports: Airport[]): string {
+    const airport = airports.find((a) => a.code === code);
     return airport ? airport.name : code;
   }
 }

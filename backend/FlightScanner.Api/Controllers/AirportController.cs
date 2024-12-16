@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace FlightScanner.Api.Controllers
 {
 	[ApiController]
-	[Route("[controller]")]
+	[Route("api/[controller]")]
 	public class AirportController : ControllerBase
 	{
 		private readonly IAirportService _airportService;
@@ -16,9 +16,9 @@ namespace FlightScanner.Api.Controllers
 		}
 
 		[HttpGet]
-		public async Task<IEnumerable<AirportResult>> GetAirports()
+		public async Task<IEnumerable<AirportResult>> GetAirports(string contains)
 		{
-			return await _airportService.GetAirports();
+			return await _airportService.GetAirports(contains);
 		}
 	}
 }

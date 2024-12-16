@@ -5,23 +5,31 @@ namespace FlightScanner.Services.Api.Services
 {
 	public class AirportHttpService : IAirportHttpService
 	{
-		private readonly string _listOfAirportsUrl = "List_of_airports_by_IATA_airport_code:_A";
-
 		private readonly HttpClient _http;
+		private readonly string _listOfAirportsUrl = "List_of_airports_by_IATA_airport_code:_";
+
 		public AirportHttpService(IHttpClientFactory httpFactory)
 		{
 			_http = httpFactory.CreateClient("Wikipedia");
 		}
 
-		public async Task<IEnumerable<AirportResult>> GetAirports()
+		public async Task<List<AirportResult>> GetAirports()
 		{
-			string html = await _http.GetStringAsync(_listOfAirportsUrl);
-			List<AirportResult> airportList = await AirportHtmlParse(html);
+			var airportList = new List<AirportResult>();
+
+			foreach (char letter in Enumerable.Range('A', 26).Select(i => (char)i))
+			{
+				string url = _listOfAirportsUrl + letter;
+				string html = await _http.GetStringAsync(url);
+
+				var parsedAirports = await ParseAirportsFromHtml(html);
+				airportList.AddRange(parsedAirports);
+			}
 
 			return airportList;
 		}
 
-		private async Task<List<AirportResult>> AirportHtmlParse(string html)
+		private async Task<List<AirportResult>> ParseAirportsFromHtml(string html)
 		{
 			var context = BrowsingContext.New();
 			var document = await context.OpenAsync(req => req.Content(html));

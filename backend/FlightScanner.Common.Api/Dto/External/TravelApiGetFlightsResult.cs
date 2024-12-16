@@ -8,7 +8,6 @@ namespace FlightScanner.Common.Api.Dto.External
         {
             public string self { get; set; }
         }
-
         public class MetaModel
         {
             public int count { get; set; }

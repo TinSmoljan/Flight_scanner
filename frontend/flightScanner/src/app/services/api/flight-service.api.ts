@@ -9,7 +9,7 @@ import { Airport } from '../../models/airport';
   providedIn: 'root',
 })
 export class FlightService {
-  private readonly apiUrl = 'https://localhost:7130/Flight';
+  private readonly apiUrl = 'https://localhost:7130/api/Flight';
   private readonly airportsDataUrl = '/assets/airports.json';
 
   constructor(private readonly http: HttpClient) {}
@@ -32,7 +32,6 @@ export class FlightService {
     sort: string,
     sortDirection: string
   ): Observable<PagingResult<TravelApiDto>> {
-    console.log('sort', sort);
     let params = new HttpParams()
       .set('originLocationCode', origin)
       .set('destinationLocationCode', destination)

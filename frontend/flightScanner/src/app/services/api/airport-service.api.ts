@@ -1,4 +1,4 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { Airport } from '../../models/airport';
@@ -7,11 +7,12 @@ import { Airport } from '../../models/airport';
   providedIn: 'root',
 })
 export class AirportService {
-  private readonly apiUrl = 'https://localhost:7130/Airport';
+  private readonly apiUrl = 'https://localhost:7130/api/Airport';
 
   constructor(private readonly http: HttpClient) {}
 
-  getAirports(): Observable<Airport[]> {
-    return this.http.get<Airport[]>(this.apiUrl);
+  getAirports(contains: string): Observable<Airport[]> {
+    let params = new HttpParams().set('contains', contains);
+    return this.http.get<Airport[]>(this.apiUrl, { params });
   }
 }

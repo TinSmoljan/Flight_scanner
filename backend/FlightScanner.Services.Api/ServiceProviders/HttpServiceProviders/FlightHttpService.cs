@@ -3,6 +3,7 @@ using FlightScanner.Common.Api.Dto.External;
 using FlightScanner.Common.Api.Exceptions;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
+using System.Net;
 using System.Text;
 
 namespace FlightScanner.Services.Api.Services
@@ -13,19 +14,20 @@ namespace FlightScanner.Services.Api.Services
 		private readonly string _apiSecret;
 		private string _bearerToken;
 		private readonly HttpClient _http;
+		private readonly ICacheService _cacheService;
 
-		public FlightHttpService(IHttpClientFactory httpFactory, IConfiguration configuration)
+		public FlightHttpService(IHttpClientFactory httpFactory, IConfiguration configuration, ICacheService cacheService)
 		{
 			_apiKey = configuration["AmadeusAPI:APIKey"] ?? string.Empty;
 			_apiSecret = configuration["AmadeusAPI:ApiSecret"] ?? string.Empty;
 			_http = httpFactory.CreateClient("TravelAPI");
-
-
-			ConnectOAuth().GetAwaiter().GetResult();
+			_cacheService = cacheService;
 		}
 
 		public async Task<IEnumerable<TravelApiDto>> GetFlightOffers(string originLocationCode, string destinationLocationCode, DateTime departureDate, DateTime? returnDate, int adults, int children, int infants, string currency)
 		{
+			await ConnectOAuth();
+
 			List<TravelApiDto> flightOffers = new List<TravelApiDto>();
 
 			var returnDateStr = returnDate.HasValue ? returnDate.Value.ToString("yyyy-MM-dd") : string.Empty;
@@ -39,8 +41,7 @@ namespace FlightScanner.Services.Api.Services
 				$"&children={children}" +
 				$"&infants={infants}" +
 				$"&nonStop=false" +
-				$"&currencyCode={currency}" +
-				$"&max=250";
+				$"&currencyCode={currency}";
 
 			var apiResult = await SendGetRequest<TravelApiGetFlightsResult>(requestUrl);
 
@@ -57,6 +58,8 @@ namespace FlightScanner.Services.Api.Services
 					DepartureDate = departureDate,
 					ReturnDate = returnDate,
 					Adults = adults,
+					Children = children,
+					Infants = infants,
 					Currency = currency,
 					Price = double.Parse(offer.price.grandTotal),
 					DepartedLayovers = offer.itineraries[0].segments.Count - 1,
@@ -74,7 +77,19 @@ namespace FlightScanner.Services.Api.Services
 			var response = await _http.GetAsync(requestUrl);
 			if (!response.IsSuccessStatusCode)
 			{
-				throw new TravelApiException("Failed to get flight offers from Amadeus API", response.StatusCode);
+				if (response.StatusCode == HttpStatusCode.Unauthorized)
+				{
+					await HandleUnauthorizedAsync();
+					return await SendGetRequest<T>(requestUrl);
+				}
+				else if(response.StatusCode == HttpStatusCode.BadRequest)
+				{
+					throw new TravelApiException("Bad request", response.StatusCode);
+				}
+				else
+				{
+					throw new TravelApiException("Failed to get flight offers from Amadeus API", response.StatusCode);
+				}
 			}
 
 			var responseContent = await response.Content.ReadAsStringAsync();
@@ -85,6 +100,13 @@ namespace FlightScanner.Services.Api.Services
 
 		private async Task ConnectOAuth()
 		{
+			var cachedToken = await _cacheService.GetItem<string>("travelApi_token");
+			if (!string.IsNullOrEmpty(cachedToken))
+			{
+				_bearerToken = cachedToken;
+				return;
+			}
+
 			var message = new HttpRequestMessage(HttpMethod.Post, "/v1/security/oauth2/token");
 			message.Content = new StringContent(
 				$"grant_type=client_credentials&client_id={_apiKey}&client_secret={_apiSecret}",
@@ -92,15 +114,27 @@ namespace FlightScanner.Services.Api.Services
 			);
 
 			var result = await _http.SendAsync(message);
-		    var content = await result.Content.ReadAsStringAsync();
+			if (!result.IsSuccessStatusCode)
+			{
+				throw new TravelApiException("Failed to connect to Amadeus API", result.StatusCode);
+			}
+
+			var content = await result.Content.ReadAsStringAsync();
 			var oauthResults = JsonConvert.DeserializeObject<TravelApiOauthResult>(content);
 
 			_bearerToken = oauthResults.access_token;
+			await _cacheService.SetItem("travelApi_token", _bearerToken);
 		}
 
 		private void ConfigBearerTokenHeader()
 		{
 			_http.DefaultRequestHeaders.Add("Authorization", $"Bearer {_bearerToken}");
+		}
+
+		private async Task HandleUnauthorizedAsync()
+		{
+			await _cacheService.RemoveItem("travelApi_token");
+			await ConnectOAuth();
 		}
 	}
 }

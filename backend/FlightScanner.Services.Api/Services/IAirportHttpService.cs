@@ -4,6 +4,6 @@ namespace FlightScanner.Services.Api.Services
 {
 	public interface IAirportHttpService
 	{
-		Task<IEnumerable<AirportResult>> GetAirports();
+		Task<List<AirportResult>> GetAirports();
 	}
 }

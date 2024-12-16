@@ -1,12 +1,5 @@
 ﻿using FlightScanner.Common.Api.Dto;
 using FlightScanner.Common.Api.Models;
-using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace FlightScanner.Services.Api.Services
 {

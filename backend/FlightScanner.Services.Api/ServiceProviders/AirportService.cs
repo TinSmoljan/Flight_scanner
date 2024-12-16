@@ -24,9 +24,27 @@ namespace FlightScanner.Services.Api.Services
 			}
 
 			var offers = await _airportHttpService.GetAirports();
-			await _cacheService.SetItem(cacheKey, offers);
+			var sortedOffers = offers.OrderBy(a => a.Name);
+			await _cacheService.SetItem(cacheKey, sortedOffers, slidingExpirtion: new TimeSpan(1, 0, 0, 0));
 
-			return await _airportHttpService.GetAirports();
+			return sortedOffers;
+		}
+
+		public async Task<IEnumerable<AirportResult>> GetAirports(string contains)
+		{
+			var cacheKey = $"airports";
+			var cachedOffers = await _cacheService.GetItem<IEnumerable<AirportResult>>(cacheKey);
+
+			if (cachedOffers == null)
+			{
+				await Task.Delay(1000);
+				return await GetAirports(contains);
+			}
+
+			var offers = cachedOffers.Where(
+				a => a.Name.StartsWith(contains, StringComparison.OrdinalIgnoreCase)
+				|| a.Code.StartsWith(contains, StringComparison.OrdinalIgnoreCase)).ToList();
+			return offers;
 		}
 	}
 }

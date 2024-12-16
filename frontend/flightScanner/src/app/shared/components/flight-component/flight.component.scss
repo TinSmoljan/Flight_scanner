@@ -1,3 +1,53 @@
+.location-form-field {
+  padding-top: 10px;
+  width: 450px;
+  margin-right: 15px;
+  position: relative;
+}
+
+::ng-deep {
+  .origin-autocomplete {
+    transform: translate(250px, -400px);
+    background-color: darkgrey !important;
+    border: 1px solid #ccc;
+    border-radius: 4px !important;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1) !important;
+    max-height: 300px;
+    overflow-y: auto;
+    scrollbar-width: none;
+  }
+
+  .destination-autocomplete {
+    transform: translate(645px, -400px);
+    background-color: darkgrey !important;
+    border: 1px solid #ccc;
+    border-radius: 4px !important;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1) !important;
+    max-height: 300px;
+    overflow-y: auto;
+    scrollbar-width: none;
+  }
+
+  .mat-mdc-autocomplete-panel::-webkit-scrollbar {
+    display: none;
+  }
+
+  .mat-option {
+    padding: 10px;
+    font-size: 1rem;
+    transition: background-color 0.3s ease;
+
+    &:hover {
+      background-color: #f1f1f1;
+    }
+
+    &.mat-selected {
+      background-color: #007bff;
+      color: white;
+    }
+  }
+}
+
 form {
   margin-bottom: 1.5rem;
   display: flex;
@@ -5,6 +55,7 @@ form {
 }
 
 .form-row {
+  margin-top: 10px;
   display: flex;
   justify-content: space-between;
   width: 100%;
@@ -85,8 +136,6 @@ td[colspan="10"] {
   font-style: italic;
 }
 
-
-
 th.origin {
   width: 18%;
 }
@@ -101,7 +150,7 @@ td:nth-child(10) {
 
 th:nth-child(7),
 th:nth-child(8),
-th:nth-child(9){
+th:nth-child(9) {
   width: 5%;
 }
 

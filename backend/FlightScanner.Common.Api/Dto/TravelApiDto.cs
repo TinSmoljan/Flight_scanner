@@ -9,6 +9,8 @@
 		public int DepartedLayovers { get; set; }
 		public int? ReturnLayovers { get; set; }
 		public int Adults { get; set; }
+		public int Children { get; set; }
+		public int Infants { get; set; }
 		public required string Currency { get; set; }
 		public double Price { get; set; }
 	}

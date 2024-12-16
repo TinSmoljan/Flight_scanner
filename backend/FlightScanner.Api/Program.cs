@@ -1,3 +1,4 @@
+using FlightScanner.Api.Initilazers;
 using FlightScanner.Api.Middleware;
 using FlightScanner.Api.Middleware.ExceptionHandling;
 using FlightScanner.Services.Api.Configuration;
@@ -55,10 +56,17 @@ builder.Services.AddProblemDetails();
 builder.Services.AddDistributedMemoryCache();
 #endregion
 
-builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+#region StartupServices
+builder.Services.AddHostedService<AirportCacheInitializer>();
+#endregion
+
+#region Swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+#endregion
+
+builder.Services.AddControllers();
 
 var app = builder.Build();
 
@@ -78,6 +86,7 @@ app.UseHttpsRedirection();
 app.UseCors("WildcardPolicy");
 app.UseAuthorization();
 app.MapControllers();
+
 app.Run();
 
 #region Dispose

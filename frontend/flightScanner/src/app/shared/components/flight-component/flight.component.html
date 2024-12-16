@@ -1,24 +1,50 @@
 <div>
   <form (ngSubmit)="searchFlights()">
     <div class="form-row">
-      <label
-        >Origin:
-        <select [(ngModel)]="origin" name="origin" required>
-          <option *ngFor="let airport of airports" [value]="airport.code">
+      <mat-form-field class="location-form-field">
+        <input
+          type="text"
+          matInput
+          [formControl]="originControl"
+          [matAutocomplete]="autoOrigin"
+          matAutocompletePosition="below"
+          placeholder="Search origin airport"
+          required
+        />
+        <mat-autocomplete
+          class="origin-autocomplete"
+          #autoOrigin="matAutocomplete"
+        >
+          <mat-option
+            *ngFor="let airport of filteredOrigins | async"
+            [value]="airport.code"
+          >
             {{ airport.name }}
-          </option>
-        </select>
-      </label>
+          </mat-option>
+        </mat-autocomplete>
+      </mat-form-field>
 
-      <label
-        >Destination:
-        <select [(ngModel)]="destination" name="destination" required>
-          <option *ngFor="let airport of airports" [value]="airport.code">
+      <mat-form-field class="location-form-field">
+        <input
+          type="text"
+          matInput
+          [formControl]="destinationControl"
+          [matAutocomplete]="autoDestination"
+          placeholder="Search destination airport"
+          required
+        />
+        <mat-autocomplete
+          class="destination-autocomplete"
+          #autoDestination="matAutocomplete"
+        >
+          <mat-option
+            *ngFor="let airport of filteredDestinations | async"
+            [value]="airport.code"
+          >
             {{ airport.name }}
-          </option>
-        </select>
-      </label>
-
+          </mat-option>
+        </mat-autocomplete>
+      </mat-form-field>
       <label
         >Departure Date:
         <input
@@ -119,8 +145,10 @@
         <td colspan="10">No flights available.</td>
       </tr>
       <tr *ngFor="let flight of flights?.results">
-        <td>{{ getAirportName(flight.departedAirport) }}</td>
-        <td>{{ getAirportName(flight.arrivedAirport) }}</td>
+        <td>{{ getAirportName(flight.departedAirport, originAirports) }}</td>
+        <td>
+          {{ getAirportName(flight.arrivedAirport, destinationAirports) }}
+        </td>
         <td>{{ flight.departureDate | date }}</td>
         <td>{{ flight.returnDate | date }}</td>
         <td>{{ flight.departedLayovers }}</td>
@@ -149,7 +177,7 @@
 
     <div>
       <label for="perPage" class="label-for-per-page">Results per page:</label>
-      <select id="perPage" [(ngModel)]="perPage" (change)="searchFlights()">
+      <select id="perPage" [(ngModel)]="perPage" (change)="togglePerpage()">
         <option *ngFor="let size of [10, 20, 30]" [value]="size">
           {{ size }}
         </option>

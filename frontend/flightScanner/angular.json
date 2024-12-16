@@ -26,7 +26,6 @@
             "tsConfig": "tsconfig.app.json",
             "inlineStyleLanguage": "scss",
             "assets": [
-              "src/assets/airports.json",
               {
                 "glob": "**/*",
                 "input": "public"
